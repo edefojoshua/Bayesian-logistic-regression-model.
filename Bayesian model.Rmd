@@ -1,0 +1,64 @@
+---
+title: "Bayesian logistic regression model"
+author: "Joshua Edefo"
+date: "2025-02-04"
+oemail: "edefojoshua2000@yahoo.com"
+output: github_document
+---
+This Bayesian model demonstrates how to use to perform logistic regression with simulated data. It begins by installing, loading the necessary package and setting a seed for reproducibility. The data was simulated which consists of 200 data points, with BMI values generated from a normal distribution, and a binary outcome variable (heart disease) generated using a logistic function based on BMI. After visualizing the data, the code sets normal priors for the intercept and slope of the logistic regression model, which links BMI to the probability of heart disease. The model is then fitted using and the summary of the model is printed.
+
+
+Libraries
+```{r a, message=FALSE}
+library(usethis)
+## Install rstanarm 
+library(rstanarm)
+```
+
+Data preparation and visualisation
+```{r cars}
+## Simulating data
+n <- 200  # Number of data points
+BMI <- rnorm(n, mean = 28, sd = 5)  # BMI (mean = 28, SD = 5)
+heart_disease <- rbinom(n, 1, prob = 1 / (1 + exp(-(0.1 * BMI - 3))))  # Logistic relationship between BMI and heart disease
+
+## Data visualization
+plot(BMI, heart_disease, main="BMI vs Heart Disease Risk", 
+     xlab="BMI", ylab= "Heart Disease (0 = No, 1 = Yes)", 
+     pch = 19, col = "blue")
+
+## Setting prior for the intercept and slope
+prior_intercept <- normal(location = 2, scale = 1)  # Prior for intercept: Mean = 2, SD = 2
+prior_slope <- normal(location = 2, scale = 1)  # Prior for slope: Mean = 2, SD = 2
+
+## Print prior
+prior_intercept
+prior_slope
+
+```
+
+Fitting the model and getting the estimates
+
+```{r c}
+model <- stan_glm(heart_disease ~ BMI, 
+                  family = binomial(link = "logit"),  # Logit link for logistic regression
+                  data = data.frame(BMI, heart_disease),
+                  prior = prior_slope, 
+                  prior_intercept = prior_intercept,
+                  chains = 4, iter = 2000, warmup = 1000)
+
+# Print the summary of the model
+summary(model)
+
+```
+Results and interpretation
+The model includes two predictors: the intercept and BMI. The estimated intercept is -1.8, suggesting that when BMI is zero, the log-odds of heart disease are low. The coefficient for BMI is 0.1, indicating a small but positive association between BMI and heart disease risk. This means that as BMI increases, the likelihood of heart disease also increases. The small standard deviation of the BMI coefficient suggests that the estimate is relatively stable.
+
+The model’s predictive performance is reflected in the mean posterior predictive distribution (mean_PPD), which is approximately 0.5, indicating an even probability of heart disease across the dataset. MCMC diagnostics confirm that the model has converged, as all parameters have an Rhat value of 1.0. The effective sample sizes (n_eff) are sufficiently large, and the Monte Carlo standard errors (mcse) are low, ensuring reliable and stable parameter estimates. Overall, the model appears well-calibrated, though additional predictors could potentially improve its accuracy.
+
+In conclusion, the results suggest that BMI has a small but positive effect on the risk of heart disease. The model has converged well, and the estimates appear to be stable. However, further investigation could explore additional predictors to improve the model's accuracy.
+
+session information
+```{r d}
+sessionInfo()
+```
